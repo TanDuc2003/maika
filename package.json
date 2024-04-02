@@ -1,0 +1,25 @@
+{
+  "name": "loginfb",
+  "version": "1.0.0",
+  "description": "test login",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.19.2",
+    "https": "^1.0.0",
+    "https-localhost": "^4.7.1"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.24.1",
+    "@babel/core": "^7.12.10",
+    "@babel/node": "^7.12.10",
+    "@babel/preset-env": "^7.12.10",
+    "https-localhost": "^4.7.1",
+    "nodemon": "^2.0.22"
+  }
+}

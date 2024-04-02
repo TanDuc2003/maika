@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+
+    <!-- <link rel="icon" href="<%= BASE_URL %>favicon.ico"> -->
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <title>MAIKA</title>
+    <script async defer crossorigin="anonymous" src="//connect.facebook.net/en_US/sdk.js"></script>
+</head>
+
+<body>
+    <script type="text/javascript">
+        let urlParams = new URLSearchParams(window.location.search);
+        let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
+        let version = urlParams.get('version') || 'v19.0';
+        let app_id = urlParams.get('app_id') || '617274822270137';
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: app_id,
+                cookie: true,
+                xfbml: true,
+                version: version
+            });
+        }
+        function fbPermission() {
+            console.log('facebook call', app_id, version, permissions);
+            FB.login(function (res1) {
+                console.log('res1');
+                console.log(res1);
+                console.log(('done ' + permissions));
+            }, { scope: permissions });
+        }
+    </script>
+    <div> Please click login button below to grant permissions for integrating your page </div>
+    <button onclick="fbPermission()"> Login Facebook </button>
+    <div> After successfully granted permissions, please contact me at ndk304.me@gmail.com for next step </div>
+</body>
+
+</html>
