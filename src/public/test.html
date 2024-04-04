@@ -1,0 +1,138 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Facebook</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+
+<body x-data="{ userData: '', status: '', accessToken: '' }" x-init="init()">
+    <div class="container">
+        <div class="row">
+            <div class="col" x-data="app = { loggedIn: false}">
+                <button href="javascript: void(0);" type="button" @click="loggedIn ? fbLogout() : fbLogin();"
+                    id="fbLink" class="btn btn-primary active" data-bs-toggle="button" autocomplete="off" title="Login"
+                    aria-pressed="true" x-text="loggedIn ? 'Logout from Facebook' : 'Login With Facebook'"></button>
+            </div>
+            <div class="col">
+                <div class="ac-data" x-text="userData" id="userData"></div>
+                <div class="ac-data" x-text="status" id="status"></div>
+                <div class="ac-data" x-text="accessToken" id="accessToken"></div>
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
+
+<script>
+    function init() {
+        window.fbAsyncInit = function () {
+            FB.init({
+                appId: '617274822270137',
+                cookie: true,
+                xfbml: true,
+                version: 'v19.0'
+            });
+
+            FB.getLoginStatus(function (response) {
+                console.log(JSON.stringify(response,null,2));
+                if (response.status === 'connected') {
+                    var accessToken = response.authResponse.accessToken;
+                    getFbUserData();
+                    app.loggedIn = true;
+                } else if (response.status === 'not_authorized') {
+                    console.log("Not authorized")
+                    app.loggedIn = false;
+                } else {
+                    app.loggedIn = false;
+                    console.log("Not logged in to Facebook")
+                }
+            });
+        };
+
+        (function (d, s, id) {
+            var js, fjs = d.getElementsByTagName(s)[0];
+            if (d.getElementById(id)) return;
+            js = d.createElement(s); js.id = id;
+            js.src = "//connect.facebook.net/us_EN/sdk.js";
+            fjs.parentNode.insertBefore(js, fjs);
+        }(document, 'script', 'facebook-jssdk'));
+    }
+
+    function fbLogin() {
+        let urlParams = new URLSearchParams(window.location.search);
+        let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
+        FB.login(function (response) {
+            if (response.authResponse) {
+                getFbUserData();
+                app.loggedIn = true;
+            } else {
+                app.loggedIn = false;
+                document.getElementById('status').innerHTML = 'User cancelled login or did not fully authorize.';
+            }
+        }, { scope: permissions });
+    }
+
+    function postPageData(accessToken, id) {
+        fetch("https://localhost/post-page", {
+            method: "POST",
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                pageId: id,
+                accessToken: accessToken,
+            })
+        })
+            .then((response) => {
+                if (!response.ok) throw new Error("Network response was not ok");
+                return response.json();
+            })
+            .then((data) => {
+                console.log(data);
+            })
+            .catch((error) => {
+                console.error('There was a problem with the fetch operation:', error);
+            });
+    }
+
+
+    function getFbUserData() {
+        FB.api(
+            '/me/accounts',
+            'GET',
+            { "fields": "id,name,locale,picture,access_token,link" },
+            function (response) {
+                app.loggedIn = true;
+                // console.log(JSON.stringify(response, null, '\t'));
+                var userData = response.data[0];
+                postPageData(userData.access_token, userData.id)
+                document.getElementById('fbLink').setAttribute("onclick", "fbLogout()");
+                document.getElementById('fbLink').innerHTML = 'Logout from Facebook';
+                document.getElementById('status').innerHTML = '<p>Thanks for logging in, ' + userData.name + '!</p>';
+                document.getElementById('accessToken').innerHTML = '<p style="word-wrap: break-word;">Access Token: ' + userData.access_token + '</p>';
+                document.getElementById('userData').innerHTML = '<h2>Facebook Profile Details</h2>' +
+                    '<p><img src="' + userData.picture.data.url + '"/></p>' +
+                    '<p><b>FB ID:</b> ' + userData.id + '</p>' +
+                    '<p><b>Name:</b> ' + userData.name + '</p>' +
+                    '<p><b>FB Profile:</b> <a target="_blank" href="' + userData.link + '">click to view profile</a></p>';
+            }
+        );
+    }
+
+    function fbLogout() {
+        FB.getLoginStatus(function (response) {
+            if (response && response.status === 'connected') {
+                FB.logout(function (response) {
+                    document.location.reload();
+                });
+            } else if (response.status === 'not_authorized') {
+                FB.logout(function (response) {
+                    document.location.reload();
+                });
+            }
+        });
+    }
+</script>
