@@ -10,5 +10,6 @@ connectDB();
 
 app.use("/static", express.static("src/public"));
 app.post("/post-page", pageController.savePageDataToMongo);
+app.post("/getLongTokenUser", pageController.getLongTokenUser);
 
 app.listen();

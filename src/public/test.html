@@ -4,10 +4,260 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Facebook</title>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
 </head>
 
-<body x-data="{ userData: '', status: '', accessToken: '' }" x-init="init()">
+<body class="bg-gradient-to-r from-cyan-500 to-blue-500 h-screen flex items-center justify-center w-full"
+    x-data="{ email: '', isEmailValid: false }">
+    <div class="bg-white shadow-md rounded-lg px-[24px] py-[48px] w-full flex flex-col items-center"
+        style="max-width: 560px;">
+        <h2 class="text-2xl font-bold mb-4 w-full">Login</h2>
+        <!-- Email Input -->
+        <div class="mb-4 w-full">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                Email Address
+            </label>
+            <input id="email"
+                class="w-full shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="email" placeholder="Enter your email" x-model="email" @input="validateEmail()">
+            <p class="text-gray-600 text-xs mt-2" x-show="email !== '' && !isEmailValid">Invalid email address.</p>
+        </div>
+        <!-- Login Button -->
+        <div class="flex items-center justify-center w-full">
+            <button @click="fbLogin()" id="isLoading"
+                class="w-1/2 bg-gradient-to-r from-sky-500 to-indigo-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <div style="display: none"
+                    class="loadingTrue inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
+                    role="status">
+                    <span
+                        class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+                </div>
+                <span class="loadingFalse">Login with Facebook</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        //----> API - FaceBook 
+        function init() {
+            window.fbAsyncInit = function () {
+                FB.init({
+                    appId: '617274822270137',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v19.0'
+                });
+
+                FB.getLoginStatus(function (response) {
+                    console.log(JSON.stringify(response, null, 2));
+                    if (response.status === 'connected') {
+                        var accessToken = response.authResponse.accessToken;
+                        getFbUserData();
+                    } else if (response.status === 'not_authorized') {
+                        console.log("Not authorized")
+                    } else {
+                        console.log("Not logged in to Facebook")
+                    }
+                });
+            };
+
+            (function (d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = "//connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            }(document, 'script', 'facebook-jssdk'));
+        }
+        init();
+
+        function fbLogin() {
+            let urlParams = new URLSearchParams(window.location.search);
+            let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
+            document.querySelector("#isLoading .loadingTrue").style.display = "inline-block";
+            document.querySelector("#isLoading .loadingFalse").style.display = "none";
+
+            FB.login(function (response) {
+                if (!response?.authResponse) {
+                    document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
+                    document.querySelector("#isLoading .loadingTrue").style.display = "none";
+                    return handleLoginFailure();
+                }
+                const { userID, accessToken } = response.authResponse;
+                handleUserLogin({ userID, accessToken });
+                document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
+                document.querySelector("#isLoading .loadingTrue").style.display = "none";
+                // window.location.href = 'success.html';
+
+            }, { scope: permissions });
+
+        };
+
+        async function handleUserLogin(params) {
+            try {
+                const { userID, accessToken } = params;
+                const res = await getLongAccessTokenUser(accessToken);
+                if (res) {
+                    const resLong = await getFbUserData(res);
+                    if (resLong) {
+                        processUserPages(resLong.data, userID);
+                    }
+                }
+            } catch (error) {
+                console.log("error handleUserLogin", error)
+            }
+        }
+
+        async function processUserPages(pagesData, userID) {
+            const promises = pagesData.map((item) => {
+                return getLongAccessTokenPage(userID, item.access_token)
+            });
+            const valueEmail = document.getElementById('email').value;
+            const res = await Promise.all(promises);
+            const listPage = res.map((item, index) => ({
+                page_id: item.data[index].id,
+                access_token: item.data[index].access_token,
+                name: item.data[index].name,
+            }))
+            postPageData({
+                email: valueEmail,
+                userId: userID,
+                listPage
+            });
+
+        }
+
+        function handleLoginFailure() {
+            app.loggedIn = false;
+            document.getElementById('status').innerHTML = 'User cancelled login or did not fully authorize.';
+        }
+
+        function postPageData(dataPost) {
+
+            fetch("https://localhost/post-page", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataPost)
+            })
+                .then(response => {
+                    if (!response.ok)
+                        throw new Error('Network response was not ok');
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response:', data);
+                })
+                .catch(error => {
+                    console.error('There was a problem with your fetch operation:', error);
+                });
+        }
+
+
+
+        function getLongAccessTokenPage(userId, longAccessTokenUser) {
+            return new Promise((resolve, reject) => {
+                const requestData = {
+                    access_token: longAccessTokenUser,
+                };
+                FB.api(`/${userId}/accounts `, "GET", requestData, (function (response) {
+                    if (response) {
+                        resolve(response);
+                    } else {
+                        reject(response.message);
+                    }
+                }));
+            })
+        }
+
+        function getLongAccessTokenUser(accessTokenUser) {
+            return new Promise((resolve, reject) => {
+                fetch("https://localhost/getLongTokenUser", {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ access_token: accessTokenUser })
+                })
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Network response was not ok');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        console.log('Response:', data.accessTokenUser);
+                        resolve(data.accessTokenUser);
+                    })
+                    .catch(error => {
+                        console.error('There was a problem with your fetch operation:', error);
+                        reject(error);
+                    });
+            });
+        }
+
+
+
+        function getFbUserData(longAccessTokenUser) {
+            return new Promise((resolve, reject) => {
+                let requestData = {
+                    fields: "id,access_token,name,link",
+                    access_token: longAccessTokenUser
+                };
+                FB.api('/me/accounts', 'GET', requestData,
+                    function (response) {
+                        if (response) {
+                            // var userData = response.data[0];
+                            // document.getElementById('fbLink').setAttribute("onclick", "fbLogout()");
+                            // document.getElementById('fbLink').innerHTML = 'Logout from Facebook';
+                            // document.getElementById('status').innerHTML = '<p>Thanks for logging in, ' + userData.name + '!</p>';
+                            // document.getElementById('accessToken').innerHTML = '<p style="word-wrap: break-word;">Access Token: ' + userData.access_token + '</p>';
+                            // document.getElementById('userData').innerHTML = '<h2>Facebook Profile Details</h2>' +
+                            //     '<p><b>FB ID:</b> ' + userData.id + '</p>' +
+                            //     '<p><b>Name:</b> ' + userData.name + '</p>' +
+                            //     '<p><b>FB Profile:</b> <a target="_blank" href="' + userData.link + '">click to view profile</a></p>';
+
+                            resolve(response);
+                        } else {
+                            reject(response.message);
+                        }
+                    }
+                );
+            })
+        }
+
+        function fbLogout() {
+            FB.getLoginStatus(function (response) {
+                if (response && response.status === 'connected') {
+                    FB.logout(function (response) {
+                        document.location.reload();
+                    });
+                } else if (response.status === 'not_authorized') {
+                    FB.logout(function (response) {
+                        document.location.reload();
+                    });
+                }
+            });
+        }
+        function validateEmail() {
+            const emailInput = document.getElementById('email');
+            const email = emailInput.value;
+            const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        }
+    </script>
+    <script src="//unpkg.com/alpinejs" defer></script>
+
+</body>
+
+</html>
+
+
+<!-- 
+<body class="bg-gray-100 flex justify-center items-center h-screen"
+    x-data="{ userData: '', status: '', accessToken: '' }" x-init="init()">
     <div class="container">
         <div class="row">
             <div class="col" x-data="app = { loggedIn: false}">
@@ -22,117 +272,4 @@
             </div>
         </div>
     </div>
-</body>
-
-</html>
-
-<script>
-    function init() {
-        window.fbAsyncInit = function () {
-            FB.init({
-                appId: '617274822270137',
-                cookie: true,
-                xfbml: true,
-                version: 'v19.0'
-            });
-
-            FB.getLoginStatus(function (response) {
-                console.log(JSON.stringify(response,null,2));
-                if (response.status === 'connected') {
-                    var accessToken = response.authResponse.accessToken;
-                    getFbUserData();
-                    app.loggedIn = true;
-                } else if (response.status === 'not_authorized') {
-                    console.log("Not authorized")
-                    app.loggedIn = false;
-                } else {
-                    app.loggedIn = false;
-                    console.log("Not logged in to Facebook")
-                }
-            });
-        };
-
-        (function (d, s, id) {
-            var js, fjs = d.getElementsByTagName(s)[0];
-            if (d.getElementById(id)) return;
-            js = d.createElement(s); js.id = id;
-            js.src = "//connect.facebook.net/us_EN/sdk.js";
-            fjs.parentNode.insertBefore(js, fjs);
-        }(document, 'script', 'facebook-jssdk'));
-    }
-
-    function fbLogin() {
-        let urlParams = new URLSearchParams(window.location.search);
-        let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
-        FB.login(function (response) {
-            if (response.authResponse) {
-                getFbUserData();
-                app.loggedIn = true;
-            } else {
-                app.loggedIn = false;
-                document.getElementById('status').innerHTML = 'User cancelled login or did not fully authorize.';
-            }
-        }, { scope: permissions });
-    }
-
-    function postPageData(accessToken, id) {
-        fetch("https://localhost/post-page", {
-            method: "POST",
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                pageId: id,
-                accessToken: accessToken,
-            })
-        })
-            .then((response) => {
-                if (!response.ok) throw new Error("Network response was not ok");
-                return response.json();
-            })
-            .then((data) => {
-                console.log(data);
-            })
-            .catch((error) => {
-                console.error('There was a problem with the fetch operation:', error);
-            });
-    }
-
-
-    function getFbUserData() {
-        FB.api(
-            '/me/accounts',
-            'GET',
-            { "fields": "id,name,locale,picture,access_token,link" },
-            function (response) {
-                app.loggedIn = true;
-                // console.log(JSON.stringify(response, null, '\t'));
-                var userData = response.data[0];
-                postPageData(userData.access_token, userData.id)
-                document.getElementById('fbLink').setAttribute("onclick", "fbLogout()");
-                document.getElementById('fbLink').innerHTML = 'Logout from Facebook';
-                document.getElementById('status').innerHTML = '<p>Thanks for logging in, ' + userData.name + '!</p>';
-                document.getElementById('accessToken').innerHTML = '<p style="word-wrap: break-word;">Access Token: ' + userData.access_token + '</p>';
-                document.getElementById('userData').innerHTML = '<h2>Facebook Profile Details</h2>' +
-                    '<p><img src="' + userData.picture.data.url + '"/></p>' +
-                    '<p><b>FB ID:</b> ' + userData.id + '</p>' +
-                    '<p><b>Name:</b> ' + userData.name + '</p>' +
-                    '<p><b>FB Profile:</b> <a target="_blank" href="' + userData.link + '">click to view profile</a></p>';
-            }
-        );
-    }
-
-    function fbLogout() {
-        FB.getLoginStatus(function (response) {
-            if (response && response.status === 'connected') {
-                FB.logout(function (response) {
-                    document.location.reload();
-                });
-            } else if (response.status === 'not_authorized') {
-                FB.logout(function (response) {
-                    document.location.reload();
-                });
-            }
-        });
-    }
-</script>
+</body> -->
