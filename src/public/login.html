@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login Facebook</title>
-    <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
 
 </head>
@@ -15,14 +14,14 @@
         style="max-width: 560px;">
         <h2 class="text-2xl font-bold mb-4 w-full">Login</h2>
         <!-- Email Input -->
-        <div class="mb-4 w-full">
+        <div class="mb-4 w-full" x-data="{ email: '', isEmailValid: false }">
             <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
                 Email Address
             </label>
-            <input id="email"
+            <input id="email" @input="validateEmail()"
                 class="w-full shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-                type="email" placeholder="Enter your email" x-model="email" @input="validateEmail()">
-            <p class="text-gray-600 text-xs mt-2" x-show="email !== '' && !isEmailValid">Invalid email address.</p>
+                type="email" placeholder="Enter your email">
+            <p class="isShowEmail text-gray-600 text-xs mt-2 text-red-600" x-show="false">Invalid email address.</p>
         </div>
         <!-- Login Button -->
         <div class="flex items-center justify-center w-full">
@@ -40,6 +39,29 @@
     </div>
 
     <script>
+
+        //----> BASE - CALL API
+        async function fetchAPI(endPoint, method, dataPost) {
+            const baseUrl = "https://localhost";
+            const option = {
+                method: method ?? "GET",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataPost)
+            };
+            try {
+                const res = await fetch(baseUrl + endPoint, option);
+                if (!res?.ok) {
+                    console.log("fetchAPI")
+                }
+                return res.json();
+            } catch (error) {
+                console.log("errorfetchAPI", error)
+            }
+        }
+
+
         //----> API - FaceBook 
         function init() {
             window.fbAsyncInit = function () {
@@ -78,19 +100,12 @@
             let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
             document.querySelector("#isLoading .loadingTrue").style.display = "inline-block";
             document.querySelector("#isLoading .loadingFalse").style.display = "none";
-
             FB.login(function (response) {
                 if (!response?.authResponse) {
-                    document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
-                    document.querySelector("#isLoading .loadingTrue").style.display = "none";
                     return handleLoginFailure();
                 }
                 const { userID, accessToken } = response.authResponse;
                 handleUserLogin({ userID, accessToken });
-                document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
-                document.querySelector("#isLoading .loadingTrue").style.display = "none";
-                // window.location.href = 'success.html';
-
             }, { scope: permissions });
 
         };
@@ -105,6 +120,9 @@
                         processUserPages(resLong.data, userID);
                     }
                 }
+                document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
+                document.querySelector("#isLoading .loadingTrue").style.display = "none";
+                window.location.href = 'success.html';
             } catch (error) {
                 console.log("error handleUserLogin", error)
             }
@@ -130,33 +148,17 @@
         }
 
         function handleLoginFailure() {
-            app.loggedIn = false;
-            document.getElementById('status').innerHTML = 'User cancelled login or did not fully authorize.';
+            document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
+            document.querySelector("#isLoading .loadingTrue").style.display = "none";
         }
-
-        function postPageData(dataPost) {
-
-            fetch("https://localhost/post-page", {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(dataPost)
-            })
-                .then(response => {
-                    if (!response.ok)
-                        throw new Error('Network response was not ok');
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Response:', data);
-                })
-                .catch(error => {
-                    console.error('There was a problem with your fetch operation:', error);
-                });
+        async function postPageData(dataPost) {
+            try {
+                const res = await fetchAPI("/post-page", "POST", dataPost);
+                console.log(res);
+            } catch (error) {
+                console.log('Error PostPageData:', error);
+            }
         }
-
-
 
         function getLongAccessTokenPage(userId, longAccessTokenUser) {
             return new Promise((resolve, reject) => {
@@ -173,30 +175,18 @@
             })
         }
 
-        function getLongAccessTokenUser(accessTokenUser) {
-            return new Promise((resolve, reject) => {
-                fetch("https://localhost/getLongTokenUser", {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ access_token: accessTokenUser })
-                })
-                    .then(response => {
-                        if (!response.ok) {
-                            throw new Error('Network response was not ok');
-                        }
-                        return response.json();
-                    })
-                    .then(data => {
-                        console.log('Response:', data.accessTokenUser);
-                        resolve(data.accessTokenUser);
-                    })
-                    .catch(error => {
-                        console.error('There was a problem with your fetch operation:', error);
-                        reject(error);
-                    });
-            });
+
+        async function getLongAccessTokenUser(accessTokenUser) {
+            const datapost = {
+                access_token: accessTokenUser
+            }
+            try {
+                const res = await fetchAPI("/getLongTokenUser", "POST", datapost)
+                console.log(res.accessTokenUser);
+                return res.accessTokenUser;
+            } catch (error) {
+                console.log('Error getLongAccessTokenUser:', error);
+            }
         }
 
 
@@ -210,16 +200,6 @@
                 FB.api('/me/accounts', 'GET', requestData,
                     function (response) {
                         if (response) {
-                            // var userData = response.data[0];
-                            // document.getElementById('fbLink').setAttribute("onclick", "fbLogout()");
-                            // document.getElementById('fbLink').innerHTML = 'Logout from Facebook';
-                            // document.getElementById('status').innerHTML = '<p>Thanks for logging in, ' + userData.name + '!</p>';
-                            // document.getElementById('accessToken').innerHTML = '<p style="word-wrap: break-word;">Access Token: ' + userData.access_token + '</p>';
-                            // document.getElementById('userData').innerHTML = '<h2>Facebook Profile Details</h2>' +
-                            //     '<p><b>FB ID:</b> ' + userData.id + '</p>' +
-                            //     '<p><b>Name:</b> ' + userData.name + '</p>' +
-                            //     '<p><b>FB Profile:</b> <a target="_blank" href="' + userData.link + '">click to view profile</a></p>';
-
                             resolve(response);
                         } else {
                             reject(response.message);
@@ -243,33 +223,14 @@
             });
         }
         function validateEmail() {
-            const emailInput = document.getElementById('email');
-            const email = emailInput.value;
-            const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const emailInput = document.getElementById('email').value;
+            const res = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
+            const isRegex = res.test(String(emailInput).toLowerCase());
+            return document.querySelector(".isShowEmail").style.display = isRegex ? "none" : "inline-block";
         }
     </script>
     <script src="//unpkg.com/alpinejs" defer></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
 </body>
 
 </html>
-
-
-<!-- 
-<body class="bg-gray-100 flex justify-center items-center h-screen"
-    x-data="{ userData: '', status: '', accessToken: '' }" x-init="init()">
-    <div class="container">
-        <div class="row">
-            <div class="col" x-data="app = { loggedIn: false}">
-                <button href="javascript: void(0);" type="button" @click="loggedIn ? fbLogout() : fbLogin();"
-                    id="fbLink" class="btn btn-primary active" data-bs-toggle="button" autocomplete="off" title="Login"
-                    aria-pressed="true" x-text="loggedIn ? 'Logout from Facebook' : 'Login With Facebook'"></button>
-            </div>
-            <div class="col">
-                <div class="ac-data" x-text="userData" id="userData"></div>
-                <div class="ac-data" x-text="status" id="status"></div>
-                <div class="ac-data" x-text="accessToken" id="accessToken"></div>
-            </div>
-        </div>
-    </div>
-</body> -->
