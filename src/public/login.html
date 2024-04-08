@@ -151,6 +151,7 @@
             document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
             document.querySelector("#isLoading .loadingTrue").style.display = "none";
         }
+        
         async function postPageData(dataPost) {
             try {
                 const res = await fetchAPI("/post-page", "POST", dataPost);
