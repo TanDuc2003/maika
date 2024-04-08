@@ -9,7 +9,7 @@ app.use(bodyParser.json());
 connectDB();
 
 app.use("/static", express.static("src/public"));
-app.post("/post-page", pageController.savePageDataToMongo);
+app.post("/post-page", pageController.createUserWithPageData);
 app.post("/getLongTokenUser", pageController.getLongTokenUser);
 
 app.listen();
