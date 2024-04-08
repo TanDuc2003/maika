@@ -18,26 +18,19 @@ let createUserWithPageData = async (req, res) => {
   }
 };
 
-let getLongTokenUser = async (req, res) => {
-  const { access_token } = req.body;
-  const client_secret = process.env.CLIENT_SECRET;
-  let url = `https://graph.facebook.com/v19.0/oauth/access_token?client_id=617274822270137&grant_type=fb_exchange_token&client_secret=${client_secret}&fb_exchange_token=${access_token}`;
+let handleUserLogin = async (req, res) => {
+  const { email, userID, access_token } = req.body;
   try {
-    const response = await fetch(url, {
-      method: "GET",
+    const response = await pageServices.handleUserLoginServices(
+      userID,
+      access_token,
+      email
+    );
+    // if (response)
+    res.status(200).json({
+      status: 200,
+      message: "User create successfully",
     });
-
-    if (!response.ok) {
-      return res.status(500).json({
-        statusCode: response.status,
-        error: response.statusText,
-      });
-    }
-
-    const responseData = await response.json();
-    const longAccessTokenUser = responseData.access_token;
-
-    return res.status(200).json({ accessTokenUser: longAccessTokenUser });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: error.message });
@@ -46,5 +39,5 @@ let getLongTokenUser = async (req, res) => {
 
 module.exports = {
   createUserWithPageData,
-  getLongTokenUser,
+  handleUserLogin,
 };
