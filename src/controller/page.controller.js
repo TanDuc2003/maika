@@ -26,11 +26,12 @@ let handleUserLogin = async (req, res) => {
       access_token,
       email
     );
-    // if (response)
-    res.status(200).json({
-      status: 200,
-      message: "User create successfully",
-    });
+    if (response) {
+      res.status(200).json({
+        status: 200,
+        message: response,
+      });
+    }
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ error: error.message });

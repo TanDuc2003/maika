@@ -120,9 +120,11 @@
             const emailInput = document.getElementById('email').value;
             const dataPost = { email: emailInput, userID: params.userID, access_token: params.accessToken }
             try {
-                fetchAPI("/handleUserLogin", "POST", dataPost).then(() => {
+                const response = await fetchAPI("/handleUserLogin", "POST", dataPost)
+                if (response.status == 200) {
+                    localStorage.setItem('result', JSON.stringify(response));
                     window.location.href = 'success.html';
-                })
+                }
             } catch (error) {
                 console.log("error handleUserLogin", error)
             }
@@ -149,6 +151,10 @@
     </script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11"
+        integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+        crossorigin="anonymous"></script>
+
 </body>
 
 </html>

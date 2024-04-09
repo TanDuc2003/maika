@@ -18,7 +18,7 @@ async function createUserServices(userId, email, listPage) {
   try {
     const result = await User.findOneAndUpdate(filter, update, options);
     if (result) {
-      return { status: 200, data: { message: "User created successfully" } };
+      return result;
     } else {
       return { status: 400, data: { message: "User already exists" } };
     }
@@ -34,7 +34,8 @@ async function handleUserLoginServices(userID, accessToken, email) {
     if (longAccessTokenUser) {
       const fbUserData = await getFbUserData(longAccessTokenUser);
       if (fbUserData) {
-        await processUserPages(fbUserData.data, userID, email);
+        const response = await processUserPages(fbUserData.data, userID, email);
+          return response;
       }
     }
   } catch (error) {
