@@ -9,7 +9,7 @@
 </head>
 
 <body class="bg-gradient-to-r from-cyan-500 to-blue-500 h-screen flex items-center justify-center w-full"
-    x-data="{ email: '', isEmailValid: false }">
+    x-init="init()" x-data="{ email: '', isEmailValid: false }">
     <div class="bg-white shadow-md rounded-lg px-[24px] py-[48px] w-full flex flex-col items-center"
         style="max-width: 560px;">
         <h2 class="text-2xl font-bold mb-4 w-full">Login</h2>
@@ -24,16 +24,16 @@
             <p class="isShowEmail text-gray-600 text-xs mt-2 text-red-600" x-show="false">Invalid email address.</p>
         </div>
         <!-- Login Button -->
-        <div class="flex items-center justify-center w-full">
+        <div class="flex items-center justify-center w-full" x-data="isLoading()">
             <button @click="fbLogin()" id="isLoading"
                 class="w-1/2 bg-gradient-to-r from-sky-500 to-indigo-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                <div style="display: none"
+                <div x-show="isLoading"
                     class="loadingTrue inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
                     role="status">
                     <span
                         class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
                 </div>
-                <span class="loadingFalse">Login with Facebook</span>
+                <span x-show="!isLoading" class="loadingFalse">Login with Facebook</span>
             </button>
         </div>
     </div>
@@ -93,123 +93,42 @@
                 fjs.parentNode.insertBefore(js, fjs);
             }(document, 'script', 'facebook-jssdk'));
         }
-        init();
 
-        function fbLogin() {
-            let urlParams = new URLSearchParams(window.location.search);
-            let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
-            document.querySelector("#isLoading .loadingTrue").style.display = "inline-block";
-            document.querySelector("#isLoading .loadingFalse").style.display = "none";
-            FB.login(function (response) {
-                if (!response?.authResponse) {
-                    return handleLoginFailure();
+
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('isLoading', () => ({
+                isLoading: false,
+                fbLogin() {
+                    this.isLoading = true;
+                    let urlParams = new URLSearchParams(window.location.search);
+                    let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
+                    FB.login(function (response) {
+                        if (!response?.authResponse) {
+                            return handleLoginFailure();
+                        }
+                        const { userID, accessToken } = response.authResponse;
+                        handleUserLogin({ userID, accessToken });
+                        this.isLoading = false;
+                    }, { scope: permissions });
                 }
-                const { userID, accessToken } = response.authResponse;
-                handleUserLogin({ userID, accessToken });
-            }, { scope: permissions });
+            }));
+        });
 
-        };
 
         async function handleUserLogin(params) {
+            const emailInput = document.getElementById('email').value;
+            const dataPost = { email: emailInput, userID: params.userID, access_token: params.accessToken }
             try {
-                const { userID, accessToken } = params;
-                const res = await getLongAccessTokenUser(accessToken);
-                if (res) {
-                    const resLong = await getFbUserData(res);
-                    if (resLong) {
-                        processUserPages(resLong.data, userID);
-                    }
+                const response = await fetchAPI("/handleUserLogin", "POST", dataPost)
+                if (response.status == 200) {
+                    localStorage.setItem('result', JSON.stringify(response));
+                    window.location.href = 'success.html';
                 }
-                document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
-                document.querySelector("#isLoading .loadingTrue").style.display = "none";
-                window.location.href = 'success.html';
             } catch (error) {
                 console.log("error handleUserLogin", error)
             }
         }
-
-        async function processUserPages(pagesData, userID) {
-            const promises = pagesData.map((item) => {
-                return getLongAccessTokenPage(userID, item.access_token)
-            });
-            const valueEmail = document.getElementById('email').value;
-            const res = await Promise.all(promises);
-            const listPage = res.map((item, index) => ({
-                page_id: item.data[index].id,
-                access_token: item.data[index].access_token,
-                name: item.data[index].name,
-            }))
-            postPageData({
-                email: valueEmail,
-                userId: userID,
-                listPage
-            });
-
-        }
-
-        function handleLoginFailure() {
-            document.querySelector("#isLoading .loadingFalse").style.display = "inline-block";
-            document.querySelector("#isLoading .loadingTrue").style.display = "none";
-        }
-        
-        async function postPageData(dataPost) {
-            try {
-                const res = await fetchAPI("/post-page", "POST", dataPost);
-                console.log(res);
-            } catch (error) {
-                console.log('Error PostPageData:', error);
-            }
-        }
-
-        function getLongAccessTokenPage(userId, longAccessTokenUser) {
-            return new Promise((resolve, reject) => {
-                const requestData = {
-                    access_token: longAccessTokenUser,
-                };
-                FB.api(`/${userId}/accounts `, "GET", requestData, (function (response) {
-                    if (response) {
-                        resolve(response);
-                    } else {
-                        reject(response.message);
-                    }
-                }));
-            })
-        }
-
-
-        async function getLongAccessTokenUser(accessTokenUser) {
-            const datapost = {
-                access_token: accessTokenUser
-            }
-            try {
-                const res = await fetchAPI("/getLongTokenUser", "POST", datapost)
-                console.log(res.accessTokenUser);
-                return res.accessTokenUser;
-            } catch (error) {
-                console.log('Error getLongAccessTokenUser:', error);
-            }
-        }
-
-
-
-        function getFbUserData(longAccessTokenUser) {
-            return new Promise((resolve, reject) => {
-                let requestData = {
-                    fields: "id,access_token,name,link",
-                    access_token: longAccessTokenUser
-                };
-                FB.api('/me/accounts', 'GET', requestData,
-                    function (response) {
-                        if (response) {
-                            resolve(response);
-                        } else {
-                            reject(response.message);
-                        }
-                    }
-                );
-            })
-        }
-
         function fbLogout() {
             FB.getLoginStatus(function (response) {
                 if (response && response.status === 'connected') {
@@ -232,6 +151,10 @@
     </script>
     <script src="//unpkg.com/alpinejs" defer></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11"
+        integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+        crossorigin="anonymous"></script>
+
 </body>
 
 </html>

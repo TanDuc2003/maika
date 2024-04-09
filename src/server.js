@@ -10,6 +10,6 @@ connectDB();
 
 app.use("/static", express.static("src/public"));
 app.post("/post-page", pageController.createUserWithPageData);
-app.post("/getLongTokenUser", pageController.getLongTokenUser);
+app.post("/handleUserLogin", pageController.handleUserLogin);
 
 app.listen();
