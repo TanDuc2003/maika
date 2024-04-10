@@ -1,0 +1,152 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integrate pages with Maika</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+</head>
+
+<body class="bg-gradient-to-r from-cyan-500 to-blue-500 h-screen flex items-center justify-center w-full" x-data="screen">
+    <div x-show="mode === 'init'" class="bg-white shadow-md rounded-lg px-[24px] py-[48px] w-full flex flex-col items-center"
+        style="max-width: 560px;">
+        <h2 class="text-2xl font-bold mb-4 w-full">Login</h2>
+        <!-- Email Input -->
+        <div class="mb-4 w-full">
+            <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+                Email Address
+            </label>
+            <input id="email" @input="isValidEmail = validateEmail(email)" x-model="email"
+                class="w-full shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                type="email" placeholder="Enter your email">
+            <p class="text-gray-600 text-xs mt-2 text-red-600" x-show="isValidEmail">Email is valid!</p>
+        </div>
+        <!-- Login Button -->
+        <div class="flex items-center justify-center w-full">
+            <button @click="fbLogin()" id="isLoading"
+                class="w-1/2 bg-gradient-to-r from-sky-500 to-indigo-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
+                <div x-show="isLoading"
+                    class="loadingTrue inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-current border-e-transparent align-[-0.125em] text-surface motion-reduce:animate-[spin_1.5s_linear_infinite] dark:text-white"
+                    role="status">
+                    <span
+                        class="!absolute !-m-px !h-px !w-px !overflow-hidden !whitespace-nowrap !border-0 !p-0 ![clip:rect(0,0,0,0)]">Loading...</span>
+                </div>
+                <span x-show="!isLoading" class="loadingFalse">Login with Facebook</span>
+            </button>
+        </div>
+    </div>
+    <div x-show="mode === 'success'" class="flex justify-center items-center h-screen">
+        <div class="bg-white rounded-lg shadow p-12 w-1/2 mx-auto">
+            <div class="rounded-full bg-gray-200 w-32 h-32 flex items-center justify-center mx-auto mb-8">
+                <i class="text-green-500 text-6xl">✓</i>
+            </div>
+            <h1 class="text-3xl font-bold text-green-600 mb-2">Welcome to Maika</h1>
+            <p class="text-gray-700 pb-5">You have granted Maika permission to manage the following pages:</p>
+            <ul class="text-gray-700">
+                <li class="mb-2">Allows Maika to view the list of pages you manage. </li>
+                <li class="mb-2">Allows Maika to send and receive messages from users on the pages you manage.</li>
+                <li class="mb-2">Allows Maika to read engagement data from users on the pages you manage.</li>
+                <li class="mb-2">Allows Maika to manage metadata related to the pages, such as name, description,
+                    profile picture,
+                    and some other information.</li>
+            </ul>
+            <template x-if="listPages.length > 0">
+                <template x-for="(item, index) in listPages" :key="index">
+                    <div class="bg-white shadow rounded-lg p-4 mb-4">
+                        <h2 class="text-lg font-semibold" x-text="item.name"></h2>
+                        <p class="text-gray-500" x-text="item.id"></p>
+                    </div>
+                </template>
+            </template>
+        </div>
+    </div>
+
+    <script>
+
+        //----> BASE - CALL API
+        async function fetchAPI(endPoint, method, dataPost) {
+            const option = {
+                method: method ?? "GET",
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(dataPost)
+            };
+            try {
+                const res = await fetch(endPoint, option);
+                if (!res?.ok) {
+                    console.log("fetchAPI")
+                }
+                return res.json();
+            } catch (error) {
+                console.log("errorfetchAPI", error)
+            }
+        }
+
+
+        //----> API - FaceBook 
+        (() => {
+            window.fbAsyncInit = function () {
+                FB.init({
+                    appId: '617274822270137',
+                    cookie: true,
+                    xfbml: true,
+                    version: 'v19.0'
+                });
+            };
+            (function (d, s, id) {
+                var js, fjs = d.getElementsByTagName(s)[0];
+                if (d.getElementById(id)) return;
+                js = d.createElement(s); js.id = id;
+                js.src = "//connect.facebook.net/en_US/sdk.js";
+                fjs.parentNode.insertBefore(js, fjs);
+            } (document, 'script', 'facebook-jssdk'));
+        })();
+
+        document.addEventListener('alpine:init', () => {
+            Alpine.data('screen', () => ({
+                mode: 'init',
+                isLoading: false,
+                email: '',
+                isValidEmail: false,
+                listPages: [],
+                fbLogin() {
+                    let __this = this;
+                    __this.isLoading = true;
+                    let urlParams = new URLSearchParams(window.location.search);
+                    let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
+                    FB.login((response) => {
+                        __this.isLoading = false;
+                        console.log('response', response);
+                        if (!response?.authResponse) {
+                            return alert('login failed');
+                        }
+                        const { userID, accessToken } = response.authResponse;
+                        const emailInput = document.getElementById('email').value;
+                        const dataPost = { email: __this.email, token: accessToken }
+                        fetchAPI("/txen-ai/utils/facebook_integrate", "POST", dataPost).then(response => {
+                            console.log('resp', response);
+                            __this.mode = 'success';
+                            __this.listPages = response.data.pages;
+                        });
+                            
+                    }, { scope: permissions });
+                }
+            }));
+        });
+        function validateEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isRegex = regex.test(email);
+            return !isRegex;
+        }
+    </script>
+    <script src="//unpkg.com/alpinejs" defer></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.11"
+        integrity="sha384-0gxUXCCR8yv9FM2b+U3FDbsKthCI66oH5IA9fHppQq9DDMHuMauqq1ZHBpJxQ0J0"
+        crossorigin="anonymous"></script>
+
+</body>
+
+</html>
