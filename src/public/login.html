@@ -9,19 +9,19 @@
 </head>
 
 <body class="bg-gradient-to-r from-cyan-500 to-blue-500 h-screen flex items-center justify-center w-full"
-    x-init="init()" x-data="{ email: '', isEmailValid: false }">
+    x-init="init()">
     <div class="bg-white shadow-md rounded-lg px-[24px] py-[48px] w-full flex flex-col items-center"
         style="max-width: 560px;">
         <h2 class="text-2xl font-bold mb-4 w-full">Login</h2>
         <!-- Email Input -->
-        <div class="mb-4 w-full" x-data="{ email: '', isEmailValid: false }">
+        <div class="mb-4 w-full" x-data="{ email: '',isValidEmail:false }">
             <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
                 Email Address
             </label>
-            <input id="email" @input="validateEmail()"
+            <input id="email" @input="isValidEmail = validateEmail(email)" x-model="email"
                 class="w-full shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
                 type="email" placeholder="Enter your email">
-            <p class="isShowEmail text-gray-600 text-xs mt-2 text-red-600" x-show="false">Invalid email address.</p>
+            <p class="text-gray-600 text-xs mt-2 text-red-600" x-show="isValidEmail">Email is valid!</p>
         </div>
         <!-- Login Button -->
         <div class="flex items-center justify-center w-full" x-data="isLoading()">
@@ -42,7 +42,7 @@
 
         //----> BASE - CALL API
         async function fetchAPI(endPoint, method, dataPost) {
-            const baseUrl = "https://localhost";
+            const baseUrl = "/";
             const option = {
                 method: method ?? "GET",
                 headers: {
@@ -105,6 +105,7 @@
                     let permissions = urlParams.get('permissions') || 'public_profile,pages_manage_metadata,pages_show_list,pages_messaging';
                     FB.login(function (response) {
                         if (!response?.authResponse) {
+                            this.isLoading = false;
                             return handleLoginFailure();
                         }
                         const { userID, accessToken } = response.authResponse;
@@ -142,11 +143,10 @@
                 }
             });
         }
-        function validateEmail() {
-            const emailInput = document.getElementById('email').value;
-            const res = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/;
-            const isRegex = res.test(String(emailInput).toLowerCase());
-            return document.querySelector(".isShowEmail").style.display = isRegex ? "none" : "inline-block";
+        function validateEmail(email) {
+            const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            const isRegex = regex.test(email);
+            return !isRegex;
         }
     </script>
     <script src="//unpkg.com/alpinejs" defer></script>
