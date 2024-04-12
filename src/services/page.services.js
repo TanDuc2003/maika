@@ -23,4 +23,17 @@ let fetchTripConfig = async (apiUrl, accessToken) => {
   }
 };
 
-module.exports = { fetchTripConfig };
+let getToken = async () => {
+  try {
+    const response = await fetch("https://vexere.com/getToken", {
+      method: "POST",
+    });
+    console.log("access_token", response);
+    return response.json();
+  } catch (error) {
+    console.error("Lỗi khi lấy cấu hình từ API:", error);
+    throw error;
+  }
+};
+
+module.exports = { fetchTripConfig, getToken };

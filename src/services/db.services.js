@@ -5,14 +5,14 @@ class DBServices {
     this.db = db;
   }
 
-  async createData(dataPost) {
+  async createData(dataPost, ticket_id) {
     try {
       const collection = this.db.collection("vexere");
-      // const ticket = {
-      //   ...dataPost,
-      //   _key: ticket_id,
-      // };
-      await collection.save(dataPost);
+      const ticket = {
+        ...dataPost,
+        _key: ticket_id,
+      };
+      await collection.save(ticket);
     } catch (error) {
       console.error("createData error", error);
     }

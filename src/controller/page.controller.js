@@ -3,6 +3,16 @@ const cheerio = require("cheerio");
 const DBServices = require("../services/db.services");
 const dbServices = new DBServices();
 
+//singleton
+let getAccessToken = async (req, res) => {
+  try {
+    const response = await pageServices.getToken();
+    return res.status(200).json(response);
+  } catch (error) {
+    console.log("error", error);
+  }
+};
+
 let fetchTicketsFromHTML = async (req, res) => {
   const { html_url, access_token } = req.body;
   if (!html_url || !access_token)
@@ -33,13 +43,6 @@ let fetchTicketsFromHTML = async (req, res) => {
       .filter((res) => res.status === "fulfilled")
       .map((item) => item.value);
 
-    // const id_ticket = tickets.map((item) => item.id);
-
-    await dbServices.createData(data);
-    // for (const id of id_ticket) {
-    //   const ticketData = data.find((item) => item.id === id.id);
-    // }
-
     return res.status(200).json(data);
   } catch (error) {
     console.error("error fetchTicketsFromHTML", error);
@@ -48,15 +51,16 @@ let fetchTicketsFromHTML = async (req, res) => {
 };
 
 async function getDataVexere(ticket_id, access_token) {
-  const apiUrl = `https://api.vexere.com/v3/trip/${ticket_id}?from=29&to=2&config=ONLINE&available_seats=9`;
+  const apiUrl = `https://api.vexere.com/v3/trip/${ticket_id}?from=29&to=2&config=ONLINE`;
   try {
     const response = await pageServices.fetchTripConfig(apiUrl, access_token);
+    if (response) {
+      await dbServices.createData(response, ticket_id);
+    }
     return response;
   } catch (error) {
     console.error("Error Config GetDataVexere API:", error);
   }
 }
 
-module.exports = {
-  fetchTicketsFromHTML,
-};
+module.exports = { fetchTicketsFromHTML, getAccessToken };

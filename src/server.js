@@ -10,6 +10,7 @@ app.use(bodyParser.json());
 
 connectDBArango();
 
+app.get("/getToken", pageController.getAccessToken);
 app.get("/getData", pageController.fetchTicketsFromHTML);
 
 app.listen();
