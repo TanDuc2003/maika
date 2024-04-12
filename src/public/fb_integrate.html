@@ -105,7 +105,7 @@
         })();
 
         document.addEventListener('alpine:init', () => {
-            Alpine.data('screen', () => ({
+            Alpine.data('screen', () => ({ 
                 mode: 'init',
                 isLoading: false,
                 email: '',
@@ -130,7 +130,6 @@
                             __this.mode = 'success';
                             __this.listPages = response.data.pages;
                         });
-                            
                     }, { scope: permissions });
                 }
             }));
