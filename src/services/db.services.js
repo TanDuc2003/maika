@@ -14,7 +14,19 @@ class DBServices {
       };
       await collection.save(ticket);
     } catch (error) {
-      console.error("createData error", error);
+      // console.error("createData error", error);
+    }
+  }
+  async createDataInfoTrip(dataPost, html_url) {
+    try {
+      const collection = this.db.collection("tripinfo");
+      const dataInfo = {
+        ...dataPost,
+        _key: html_url,
+      };
+      await collection.save(dataInfo);
+    } catch (error) {
+      // console.error("createDataInfoTrip error", error);
     }
   }
 }

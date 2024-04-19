@@ -20,7 +20,8 @@
     "https": "^1.0.0",
     "https-localhost": "^4.7.1",
     "mongoose": "^8.2.4",
-    "node-fetch": "^2.7.0"
+    "node-fetch": "^2.7.0",
+    "redis": "^4.6.13"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.1",
