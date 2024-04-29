@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 const DBServices = require("../services/db.services");
 const dbServices = new DBServices();
 const connectToRedis = require("../config/connect.redis");
-const htmlUrls = require("../public/html_urls");
+const htmlUrls = require("../utils/html_urls");
 
 const getAccessToken = async (req, res) => {
   try {
