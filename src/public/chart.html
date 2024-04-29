@@ -53,16 +53,16 @@
                     let __this = this;
                     __this.isLoading = true;
                     try {
-                        const data = await fetchAPI('/getChart')
+                        const response = await fetchAPI('/getChart')
                         const ctx = __this.$refs.chartCanvas.getContext('2d')
-                        const timestamps = data.results.A.frames.flatMap(frame => frame.data.values[0]);
-                        const uniqueTimestamps = [...new Set(timestamps)].sort((a, b) => a - b);
-                        const datasets = data.results.A.frames.map(frame => ({
+                        const timestamps = response.results.A.frames.flatMap(frame => frame.data.values[0]);
+                        const labelTimestamps = [...new Set(timestamps)].sort((a, b) => a - b);
+                        const datasets = response.results.A.frames.map(frame => ({
                             label: frame.schema.fields[1].labels.pod,
                             data: frame.data.values[0].map((x, index) => ({ x, y: frame.data.values[1][index] }))
                         }));
-                        const dataS = {
-                            labels: uniqueTimestamps,
+                        const data = {
+                            labels: labelTimestamps,
                             datasets: datasets.map(item => ({
                                 label: item.label,
                                 data: item.data,
@@ -73,7 +73,7 @@
                         };
                         const config = {
                             type: 'line',
-                            data: dataS,
+                            data: data,
                             maintainAspectRatio: true,
                             responsive: true,
                             options: {
@@ -121,7 +121,7 @@
                                         grid: { color: 'rgba(71, 88, 96, 0.5)' },
                                         ticks: {
                                             color: 'white',
-                                            callback: (val) => convertTimestamp(uniqueTimestamps[val])
+                                            callback: (val) => convertTimestamp(labelTimestamps[val])
                                         },
                                         display: true,
                                         scaleLabel: { display: false }
