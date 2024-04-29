@@ -3,7 +3,7 @@ const cheerio = require("cheerio");
 const DBServices = require("../services/db.services");
 const dbServices = new DBServices();
 const connectToRedis = require("../config/connect.redis");
-const html_urls = require("../public/html_urls");
+const htmlUrls = require("../public/html_urls");
 
 const getAccessToken = async (req, res) => {
   try {
@@ -18,7 +18,6 @@ const getAccessToken = async (req, res) => {
     console.log("error", error);
   }
 };
-
 const fetchTicketsFromHTML = async (req, res) => {
   const redis = await connectToRedis();
   const { date } = req.body;
@@ -30,7 +29,7 @@ const fetchTicketsFromHTML = async (req, res) => {
     console.time();
     const tickets = [];
     const responses = [];
-    for (const html_url of html_urls) {
+    for (const html_url of htmlUrls) {
       const { route_name, route_code } = extractInfo(html_url);
       const url = `${html_url}${date}&v=4`;
       const response = await fetch(url);
@@ -40,7 +39,7 @@ const fetchTicketsFromHTML = async (req, res) => {
         const ticket = $(element).attr("id");
         const companyName = $(element).attr("data-company-name");
         const ticketSplit = ticket.split("-");
-        const ticketId = ticketSplit[ticketSplit.length - 1];
+        const ticketId = ticketSplit.pop();
         tickets.push({ id: ticketId, companyName: companyName });
       });
 

@@ -1,6 +1,6 @@
 const fetch = require("node-fetch");
 
-let fetchTripConfig = async (apiUrl, accessToken) => {
+const fetchTripConfig = async (apiUrl, accessToken) => {
   const headers = {
     accept: "application/json, text/plain, */*",
     "accept-language": "vi-VN",
@@ -23,13 +23,14 @@ let fetchTripConfig = async (apiUrl, accessToken) => {
   }
 };
 
-let getToken = async () => {
+const getToken = async () => {
   try {
     const response = await fetch("https://vexere.com/getToken", {
       method: "POST",
     });
     console.log("access_token", response);
-    return response.json();
+    const res = await response.json();
+    return res;
   } catch (error) {
     console.error("Lỗi khi lấy cấu hình từ API:", error);
     throw error;
