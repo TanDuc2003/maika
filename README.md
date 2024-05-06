@@ -16,10 +16,10 @@ Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the
 ## Example Usage: 
   - `npx -y prestart-config -f <from> -s <source> -d <dir>`
   1. **Load configuration from MongoDB:** <br>
-    - If use config mongo .env<br>
+     If use config mongo .env<br>
         - Example: `npx -y prestart-config -f mongo -s <collection name> -d <out directory>`<br>
-    - If use Mongo URL Connection <br>
-        - Example: `npx -y prestart-config -f <mongodb+srv:// ...> -s <collection name> -d <out directory>`<br>
+     If use Mongo URL Connection <br>
+        - Example: `npx -y prestart-config -f <mongodb+srv:// ...> -s <collection name> -d <out directory>`
   2. **Load configuration from GoogleSheet:**<br>
     - Example: `npx -y prestart-config -f <Google Sheets URL> -s <sheet name> -d <output directory>`
 
