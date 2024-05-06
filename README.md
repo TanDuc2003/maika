@@ -15,16 +15,13 @@ Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the
 
 ## Example Usage: 
   - `npx -y prestart-config -f <from> -s <source> -d <dir>`
-  1. ** Load configuration from MongoDB: **
-    If use config mongo .env
-    - Example:  
-        `npx -y prestart-config -f mongo -s <collection name> -d <out directory>`
-    If use Mongo URL Connection 
-    - Example:  
-        `npx -y prestart-config -f <mongodb+srv:// ...> -s <collection name> -d <out directory>`
-  2. ** Load configuration from GoogleSheet: **
-    - Example:  
-        `npx -y prestart-config -f <Google Sheets URL> -s <sheet name> -d <output directory>`
+  1. Load configuration from MongoDB: 
+    - If use config mongo .env
+        - Example: `npx -y prestart-config -f mongo -s <collection name> -d <out directory>`
+    - If use Mongo URL Connection 
+        - Example: `npx -y prestart-config -f <mongodb+srv:// ...> -s <collection name> -d <out directory>`
+  2. Load configuration from GoogleSheet:
+    - Example: `npx -y prestart-config -f <Google Sheets URL> -s <sheet name> -d <output directory>`
 
 ## Reference Documentation
 Detailed reference documentation for prestart-config can be found at [link repository](https://github.com/royalggitparter/prestart-config).
