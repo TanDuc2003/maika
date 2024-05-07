@@ -30,7 +30,7 @@ Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the
    * `-i, --init`             Initializes the configuration.
    * `-h, --help`            Displays help for the command.
 
-  - `npx -y prestart-config -f <from> -s <source> -d <dir>`
+  ### `npx -y prestart-config -f <from> -s <source> -d <dir>`
   1. **Load configuration from MongoDB:** <br>
      * If use config mongo .env<br>
         * Example: `npx -y prestart-config -f mongo -s <collection name> -d <out directory>`<br>
