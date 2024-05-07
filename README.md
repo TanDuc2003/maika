@@ -13,9 +13,15 @@ Prestart Config is a command-line utility used to load and configure settings fr
 - `GOOGLE_SERVICE_ACCOUNT_EMAIL`: Email of Google service account (if using Google Sheets).
 - `GOOGLE_PRIVATE_KEY`: Private key of Google service account (if using Google Sheets).
 
+> [!TIP]
+> For a smoother process.
+You can obtain the `GOOGLE_SERVICE_ACCOUNT_EMAIL` and `GOOGLE_PRIVATE_KEY` by following the instructions provided by Google [here](https://cloud.google.com/iam/docs/keys-list-get).
+
 Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the private key as a string, but keep in mind that this string is often long and distributed. Make sure you copy this string accurately.
 
 ## Example Usage: 
+> [!TIP]
+> Helpful advice for doing things better or more easily.
   - `npx -y prestart-config -f <from> -s <source> -d <dir>`
   1. **Load configuration from MongoDB:** <br>
      * If use config mongo .env<br>
@@ -26,4 +32,4 @@ Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the
     - Example: `npx -y prestart-config -f <Google Sheets URL> -s <sheet name> -d <output directory>`
 
 ## Reference Documentation
-Detailed reference documentation for prestart-config can be found at [GitHub Pages](https://github.com/royalggitparter/prestart-config).
+Detailed reference documentation for prestart-config can be found at [GitHub Pages](https://github.com/royalgarter/prestart-config).
