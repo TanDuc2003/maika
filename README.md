@@ -23,12 +23,12 @@ Note: For the `GOOGLE_PRIVATE_KEY` environment variable, you need to provide the
 > [!NOTE]
 > Helpful advice for doing things better or more easily.
    
-   -f, --from <from>      Specifies the configuration source. Acceptable values are: *mongo*, *Mongo Url*, *Google Sheet Url*.
-   -s, --source <source>  Specifies the configuration source details. For MongoDB, this is the collection name; for Google Sheets, this is the sheet name.
-   -d, --dir <dir>        Specifies the output directory.
-   -q, --query <query>    Specifies a configuration query.
-   -i, --init             Initializes the configuration.
-   -h, --help             Displays help for the command.
+   * -f, --from <from>      Specifies the configuration source. Acceptable values are: *mongo*, *Mongo Url*, *Google Sheet Url*.
+   * -s, --source <source>  Specifies the configuration source details. For MongoDB, this is the collection name; for Google Sheets, this is the sheet name.
+   * -d, --dir <dir>        Specifies the output directory.
+   * -q, --query <query>    Specifies a configuration query.
+   * -i, --init             Initializes the configuration.
+   * -h, --help             Displays help for the command.
 
   - `npx -y prestart-config -f <from> -s <source> -d <dir>`
   1. **Load configuration from MongoDB:** <br>
