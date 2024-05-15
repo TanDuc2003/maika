@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Intergrate Maika</title>
+  <script defer src="./cdn.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0">
+<style>
+@import url("https://fonts.googleapis.com/css?family=Poppins:wght@400;500;600&display=swap");  
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Poppins", sans-serif;
+}
+
+.sendbtn {
+  border: none;
+  padding: 0 15px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.chatbot-toggler {
+  z-index: 999999;
+  position: fixed;
+  right: var(--chatbot-right,35px);
+  bottom: var(--chatbot-bottom,40px);
+  height: 50px;
+  width: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  outline: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 50%;
+  color: var(--chatbox-bg);
+  transition: all 0.2s ease;
+}
+.show-chatbot .chatbot-toggler {
+  transform: rotate(180deg);
+}
+.chatbot-toggler span {
+  position: absolute;
+}
+.show-chatbot .chatbot-toggler span:first-child,
+.chatbot-toggler span:last-child {
+  opacity: 0;
+}
+.show-chatbot .chatbot-toggler span:last-child {
+  opacity: 1;
+}
+.chatbot {
+  z-index: 9;
+  border-radius: 15px;
+  position: fixed;
+  right: 60px;
+  bottom: 100px;
+  pointer-events: none;
+  transform: scale(0.5);
+  opacity: 0;
+  overflow: hidden;
+  width: 420px;
+  transform-origin: bottom right;
+  transition: all 0.1s ease-out;
+  box-shadow: 0 0 128px 0 rgba(0, 0, 0, 0.1),
+  0 32px 64px -48px rgba(0, 0, 0, 0.5);
+}
+.show-chatbot .chatbot {
+  transform: scale(0.7);
+  opacity: 1;
+  pointer-events: auto;
+}
+.chatbot header {
+  padding: 16px 0;
+  margin-bottom: 5px;
+  text-align: center;
+}
+
+.chatbot header h2 {
+  font-size: 1.4rem;
+}
+
+.chatbot header .close {
+  right: 20px;
+  top: 30px;
+  cursor: pointer;
+  transform-origin: bottom right;
+  display: none;
+  transform: translateY(-50%);
+  position: absolute;
+  font-size: 1.8rem;
+}
+
+.chatbot header .notifi {
+  left: 20px;
+  top: 30px;
+  cursor: pointer;
+  transform-origin: bottom right;
+  display: block;
+  transform: translateY(-50%);
+  position: absolute;
+  font-size: 1.8rem;
+}
+.chatbox{
+  z-index: 9;
+}
+.chatbot .chatbox {
+  height: 510px;
+  overflow-y: auto;
+  padding: 30px 20px 100px;
+}
+.chatbox .chat {
+  display: flex;
+}
+
+.chatbox .incoming span {
+  flex-shrink: 0;
+  height: 32px;
+  width: 32px;
+  text-align: center;
+  line-height: 32px;
+  border-radius: 4px;
+  align-self: flex-end;
+  margin: 0 10px 7px 0;
+}
+.chatbot .incoming {
+  margin: 20px 0;
+  justify-content: flex-start;
+}
+.chatbot .outgoing {
+  margin: 20px 0;
+  justify-content: flex-end;
+}
+.chatbox .chat p {
+  padding: 12px 16px;
+  font-size: 0.95rem;
+  white-space: pre-wrap;
+  border-radius: 10px 10px 0 10px;
+}
+.chatbox .incoming p {
+  border-radius: 10px 10px 10px 0;
+  word-break: break-word;
+}
+.chatbot .chat-input {
+  position: absolute;
+  bottom: 0;
+  display: flex;
+  gap: 5px;
+  width: 100%;
+  border-top: 1px solid #ccc;
+  padding: 5px 5px 5px 20px;
+}
+.chat-input textarea {
+  border: none;
+  height: 55px;
+  width: 100%;
+  overflow-y: hidden;
+  outline: none;
+  font-size: 0.95rem;
+  resize: none;
+  padding: 16px 15px 16px 0;
+}
+.close-btn {
+  background: white;
+}
+.btnRemove{
+  border: none;
+  background: white;
+  padding: 0 10px 0 0;
+}
+.btnRemove:hover {
+  color: red;
+  transition: 0.2s;
+
+}
+
+.chat-input textarea:valid ~ span {
+  visibility: visible;
+}
+
+@media (max-width: 490px) {
+  .chatbot {
+    z-index: 9;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 0;
+  }
+  .chatbot .chatbox {
+    height: 90%;
+    z-index: 9;
+  }
+  .chatbot header .close {
+    display: block;
+    background: transparent;
+  }
+  .show-chatbot .chatbot{
+    transform: scale(1);
+  }
+}
+</style>
+</head>
+<body>
+ <div x-data="screen" :class="$store.dataStore.isShow?'show-chatbot':''" x-init="initDOM()">
+  <button class="chatbot-toggler" :style="{ 'background': $store.dataStore.primaryColor,'color':$store.dataStore.iconColor }">
+    <span class="material-symbols-outlined">message</span>
+    <span class="material-symbols-outlined">close</span>
+  </button>
+  <div class="chatbot"  :style="{ 'background': $store.dataStore.primaryColor }">
+    <header :style="{ 'background-color': $store.dataStore.primaryColor }">
+      <span @click="$store.dataStore.toggleNotification()" class="notifi material-symbols-outlined" :style="{'color': $store.dataStore.chatboxBg}" x-show="$store.dataStore.notificationEnabled">
+        notifications
+      </span>
+      <span @click="$store.dataStore.toggleNotification()" class="notifi material-symbols-outlined" :style="{'color': $store.dataStore.chatboxBg}" x-show="!$store.dataStore.notificationEnabled">
+        notifications_off
+      </span>
+      <h2 id='headerTitle' :style="{'color': $store.dataStore.chatboxBg}" x-text='$store.dataStore.title'>ChatBOT</h2>
+      <span @click="closeLiveWidgetChat()" class="close material-symbols-outlined" :style="{'color': $store.dataStore.chatboxBg}">close</span>
+    </header>
+    <ul class="chatbox" x-ref="chatbox" :style="{ 'background-color': $store.dataStore.chatboxBg}">
+      <li class="chat incoming">
+        <span :style="{'color': $store.dataStore.chatboxBg,'background': $store.dataStore.primaryColor}" class="material-symbols-outlined">smart_toy</span>
+        <p  :style="{'color': $store.dataStore.chatbotTextColor,'background': $store.dataStore.chatbotBg}">Hi there 👋<br>How can I help you today ?</p>
+      </li>
+    </ul> 
+    <div class="chat-input" :style="{'background':$store.dataStore.chatboxBg}">
+      <button :style="{ 'background-color': $store.dataStore.chatboxBg,'color':$store.dataStore.primaryColor}" id="send-btn" class="btnRemove material-symbols-outlined"  @click="$store.dataStore.removeRoom()" title="Remove Room">person_remove</button>
+      <textarea  :style="{ 'background-color': $store.dataStore.chatboxBg}" placeholder="Enter a message ..." required x-model.debounce.150ms='inputValue' ></textarea>
+      <button :style="{'background-color': $store.dataStore.primaryColor,'color':$store.dataStore.iconColor}" id="send-btn" class="sendbtn material-symbols-outlined" @click="sendMessage()" :disabled="isSending">Send</button>
+    </div>
+  </div>
+</div>  
+  <script>
+    //----> BASE - CALL API
+    async function fetchAPI(endPoint, method, dataPost) {
+      const option = {
+        method: method ?? "GET",
+        headers: { 'Content-Type': 'application/json'},
+        body: JSON.stringify(dataPost)
+      };
+      try {
+        const baseURL = 'https://maika-crm.ask.vin/api/v1';
+        const res = await fetch(baseURL + endPoint, option);
+        if (!res?.ok) {
+          console.log("fetchAPI");
+        }
+        return res.json();
+      } catch (error) {
+        console.log("errorfetchAPI", error)
+      }
+    };
+
+    function removeNullProperties(obj) {
+        return Object.fromEntries(Object.entries(obj).filter(([_, v]) => v != null));
+    };
+
+    const createChatLi = (message, className) => {
+      const chatLi = document.createElement('li');
+      chatLi.classList.add('chat', className);
+        let chatContent = className === 'outgoing' 
+        ? `<p x-bind:style="{ 'background': $store.dataStore.chatClientBg, 'color': $store.dataStore.chatClientTextColor }"></p>` 
+        : `<span :style="{'color': $store.dataStore.chatboxBg,'background': $store.dataStore.primaryColor}" class="material-symbols-outlined">smart_toy</span><p x-bind:style="{ 'background': $store.dataStore.chatbotBg, 'color': $store.dataStore.chatbotTextColor }"></p>`;
+      chatLi.innerHTML = chatContent;
+      chatLi.querySelector("p").textContent = message;
+      return chatLi;
+    };
+
+
+    document.addEventListener('alpine:init', () => {
+      Alpine.store('dataStore',{
+        primaryColor: 'green', 
+        //màu cho tin nhắn cho bot
+        chatbotBg: '#66CC99',
+        chatbotTextColor: 'black',
+        //màu cho tin nhắn cho người dùng
+        chatClientBg:'#99FFCC',
+        chatClientTextColor:'#220000',
+        //màu cho popup
+        iconColor:'white',
+        chatboxBg: '#FFFFFF',// màu chatBox
+        title:" Maika Demo",
+        isShow : false,
+        valueMessage: '',
+        chatbox: null,
+        subStreamCalled: false,
+        isShow: false,
+        notificationEnabled: true,
+        webSocket: null,
+        token: {},
+        subStream(roomId, visitorToken){
+          const subscriptions = [
+            { "msg": "sub", "id": "rc-ddp-client-0", "name": "stream-room-messages", "params": [roomId, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-1", "name": "stream-notify-room", "params": [`${roomId}/typing`, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-2", "name": "stream-notify-room", "params": [`${roomId}/user-activity`, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-3", "name": "stream-notify-room", "params": [`${roomId}/deleteMessage`, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-4", "name": "stream-livechat-room", "params": [roomId, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-5", "name": "stream-livechat-room", "params": [roomId, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "sub", "id": "rc-ddp-client-6", "name": "stream-livechat-room", "params": [roomId, { "useCollection": false, "args": [{ "visitorToken": visitorToken, "token": visitorToken }] }] },
+            { "msg": "method", "method": "stream-notify-room", "params": [`${roomId}/user-activity`, "guest-2993", [], { "token": visitorToken }], "id": "rc-ddp-client-7" }
+            ];
+          console.log("subStream");
+          subscriptions.forEach(subscription=> this.webSocket.send(JSON.stringify(subscription)));
+        },  
+        unsubStream(){
+          const unSubScriptions=[
+            {"msg":"unsub","id":"rc-ddp-client-0"},
+            {"msg":"unsub","id":"rc-ddp-client-1"},
+            {"msg":"unsub","id":"rc-ddp-client-2"},
+            {"msg":"unsub","id":"rc-ddp-client-3"},
+            {"msg":"unsub","id":"rc-ddp-client-4"},
+            {"msg":"unsub","id":"rc-ddp-client-5"},
+            {"msg":"unsub","id":"rc-ddp-client-6"},
+            {"msg":"unsub","id":"rc-ddp-client-7"},
+            ]
+          console.log("unsubStream");
+          unSubScriptions.forEach(unsubItem=> this.webSocket.send(JSON.stringify(unsubItem)));
+        },
+        initWebSocket(){
+          const _this = this;
+          const webSocket = _this.webSocket;
+          webSocket.onopen = async function (event) {
+            const chatData = await JSON.parse(localStorage.getItem('chatData'));
+            const isChatbotVisible = localStorage.getItem('chatbotVisible');
+            const valueNotification= localStorage.getItem('notificationEnabled')==='true'?true:false;
+            _this.notificationEnabled = valueNotification;
+            // if (isChatbotVisible==='true')
+            // _this.showLiveWidgetChat();
+            const message = {msg: "connect",version: "1",support: ["1", "pre2", "pre1"]};
+            webSocket.send(JSON.stringify(message));
+            if(!chatData) return;
+            const {roomId, visitorToken} = chatData;
+            await _this.getHistoryChat();
+            _this.scrollToBottom();
+            await _this.subStream(roomId, visitorToken); 
+            console.log("subStream widget.onpen");
+          };
+
+          webSocket.onmessage = async function (event) {
+            const data = JSON.parse(event.data);
+            if (data.msg === 'ping') {
+              const pongMessage = JSON.stringify({ msg: 'pong' });
+              webSocket.send(pongMessage);
+            } else if (data.msg === 'changed') {
+              const chatData = await JSON.parse(localStorage.getItem('chatData'));
+              if(!chatData) return;
+              const {roomId,visitorToken} = chatData;
+              const eventName = data?.fields?.eventName;
+              const args = data.fields.args;
+              if (eventName === `${roomId}/user-activity`) {
+                const username = args[0];
+                const activities = args.length > 1 ? args[1] : [];
+                if (activities.includes('user-typing')) {
+                            // chatbox.appendChild(createChatLi("Thinking ...", 'incoming'));
+                } else {
+                            // chatbox.removeChild(createChatLi("Thinking ...", 'incoming'))
+                }
+              } else if (eventName === roomId) {
+                const t = args[0]?.t;
+                if(t === "livechat-close") await _this.removeRoom(true);
+                
+                if (args.length > 0) {
+                  const username = args[0]?.u?.name;
+                  const newMsg = args[0]?.msg;
+                  if (!newMsg && newMsg !== 0 || ["", "connected"].includes(newMsg)) return;
+                  const isVisitorMessage = args[0]?.token === visitorToken;
+                  const chatClass = isVisitorMessage ? 'outgoing' : 'incoming';
+                  if(chatClass==='incoming') _this.showNotification();
+                  _this.chatbox.appendChild(createChatLi(newMsg, chatClass));
+                  _this.scrollToBottom();
+                }
+              }
+            }
+          };
+
+          webSocket.onclose = function (event) {
+            console.log('WebSocket connection closed.');
+          };
+        },
+        showNotification () {
+          console.log(this.notificationEnabled);  
+          if(this.notificationEnabled === false) return;
+          var audioElement = new Audio('notification-sound.wav');
+          if (!("Notification" in window) || document.hasFocus()) {
+            return audioElement.play();
+          }
+        },
+        scrollToBottom() {
+          this.chatbox.scrollTo({top: this.chatbox.scrollHeight,behavior: 'smooth'});
+        },
+        async config(token){
+          const res = await fetchAPI(`/livechat/config?token=${token}`);
+          localStorage.setItem('config', JSON.stringify(res));
+        },
+        async getHistoryChat() {
+          const chatData = await JSON.parse(localStorage.getItem('chatData'));
+          if(!chatData) return;
+          const {roomId, visitorToken, username} = chatData;
+          const res = await fetchAPI(`/livechat/messages.history/${roomId}?token=${visitorToken}`);
+          res.messages.reverse().forEach(message=>{
+            if(["","connected"].includes(message.msg)) return;
+            if(message.u.username === username){
+              this.chatbox.appendChild(createChatLi(message.msg, 'outgoing'));
+            }else{
+              this.chatbox.appendChild(createChatLi(message.msg, 'incoming'));
+            }
+          }); 
+        },
+        async regiterGuest(params) {
+          const { token, name, email, department } = params;
+          const chatData = await JSON.parse(localStorage.getItem('chatData'));
+
+          if (chatData && chatData.visitorToken !== token) {
+            this.subStreamCalled = false;
+            localStorage.clear();
+          }
+
+          const uuid = this.generateUniqueID();
+          const visitorData = removeNullProperties({
+            token: token ?? uuid,
+            email: email ?? null,
+            name: name ?? null,
+            department: department ?? null
+          });
+
+          const dataPostVs = { visitor: visitorData };
+          const res = await fetchAPI("/livechat/visitor", "POST", dataPostVs);
+          const { token: newToken, username } = res?.visitor;
+          const roomRes = await fetchAPI(`/livechat/room?token=${newToken}`);
+          const roomId = roomRes?.room?._id;
+
+          await this.subStream(roomId, newToken);
+          localStorage.setItem('chatData', JSON.stringify({ "roomId": roomId, "visitorToken": newToken, "username": username }));
+          this.subStreamCalled = true;
+
+          if (chatData && chatData.visitorToken !== token) {
+            location.reload();
+          }
+        },
+        async removeRoom(isOk = false) {
+          const chatData = await JSON.parse(localStorage.getItem('chatData'));
+            if (!chatData) return;
+            let isConfirm = isOk ? true : confirm("Are you sure you want to remove room?");
+
+            if (!isConfirm) return;
+            this.chatbox.innerHTML = '';
+            await this.unsubStream();
+            this.valueMessage = '';
+            const {roomId, visitorToken} = chatData;
+            if (!isOk) {
+              this.closeLiveWidgetChat();
+                const dataPost = { "rid": roomId, "token": visitorToken };
+                const res = await fetchAPI("/livechat/room.close", "POST", dataPost);
+            }
+            localStorage.clear();
+            this.subStreamCalled = false;
+            this.chatbox.appendChild(createChatLi("Hi there 👋. How can I help you today?", 'incoming'));
+        },
+        toggleNotification() {
+          this.notificationEnabled = !this.notificationEnabled;
+        },
+        generateUniqueID() {
+          const timestamp = Date.now().toString(36); 
+          const randomString = Math.random().toString(36).substr(2, 5);
+          return timestamp + randomString;
+        },
+        showLiveWidgetChat() {  
+            document.body.classList.toggle('show-chatbot'); 
+            this.isShow=!this.isShow;
+            localStorage.setItem('chatbotVisible', this.isShow.toString());
+        },
+        closeLiveWidgetChat() {
+          document.body.classList.remove('show-chatbot');
+          localStorage.setItem('chatbotVisible', 'false');
+        }
+      });
+
+      Alpine.data('screen',()=>({
+        chatbox: null,
+        webSocket: new WebSocket('wss://maika-crm.ask.vin/websocket'),
+        store : Alpine.store('dataStore'),
+        isSending:false,
+        inputValue:'',
+        initDOM(){
+          const store = this.store;
+          store.chatbox=this.$refs.chatbox;
+          store.webSocket = this.webSocket;
+          store.initWebSocket();
+        },
+        async sendMessage() {
+          try {
+            const store = this.store;
+            this.isSending = true;
+            const message = this.inputValue.trim();
+            if (!message) return;
+            const chatData = await JSON.parse(localStorage.getItem('chatData'));
+            const {roomId, visitorToken} = chatData;
+            // if(visitorToken!= store.token.token)
+            console.log(store.token);
+            const dataPostMsg = { 'msg': message, 'rid': roomId, 'token': visitorToken };
+            await fetchAPI("/livechat/message", "POST", dataPostMsg);
+            this.inputValue='';
+          } catch (error) {
+            console.log("sendMessage", error);
+          } finally{
+            this.isSending = false;
+          }
+        },
+      }));
+
+
+      window.Livechat = {
+        regiterGuest:(opts)=>{
+          if (!opts) return;
+          const store = Alpine.store('dataStore');
+          const dataPost ={
+            token: opts.token, 
+            name: opts.name,
+            email: opts.email,
+            department: opts.department,
+          };
+          store.regiterGuest(dataPost);
+        },
+        showWidget:()=>{
+          const store = Alpine.store('dataStore');
+          store.isShow = true;
+          localStorage.setItem('chatbotVisible', 'true');
+        },
+        hideWidget:() =>{  
+          const store = Alpine.store('dataStore');
+          store.isShow = false;
+          localStorage.setItem('chatbotVisible', 'false');
+        },
+        setTheme: (opts) => {
+          if (!opts) return;
+          const store = Alpine.store('dataStore');
+          store.primaryColor = opts.primaryColor ?? store.primaryColor;
+          store.chatbotBg = opts.chatbotBg ?? store.chatbotBg;
+          store.chatbotTextColor = opts.chatbotTextColor ?? store.chatbotTextColor;
+          store.chatClientBg = opts.chatClientBg ?? store.chatClientBg;
+          store.chatClientTextColor = opts.chatClientTextColor ?? store.chatClientTextColor;
+          store.iconColor = opts.iconColor ?? store.iconColor;
+          store.chatboxBg = opts.chatboxBg ?? store.chatboxBg;
+          store.title= opts.title ?? store.title;
+        },
+      };
+ 
+
+      });
+     
+        
+      // window.Livechat.showWidget();
+      // window.Livechat.hideWidget();
+      // window.Livechat.regiterGuest({
+      //   department: "demo",
+      //   name:"test user 1",
+      //   email:"user1@gmail.com",
+      //   token: "user1Token"
+      // });
+      // window.Livechat.setTheme({
+      //    primaryColor: 'purple',
+      //   chatbotBg: 'black',
+      //   chatbotTextColor: 'white',
+      //   chatClientBg: '#99FFCC',
+      //   chatClientTextColor: '#220000',
+      //   iconColor: 'white',
+      //   chatboxBg: '#FFFFFF',
+      //   title: 'Maika Demo'
+      // });
+</script>
+
+</body>
+</html>
