@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body x-data="screen" class="bg-zinc-800">
+    <div x-show="isLoading" class='flex space-x-2 justify-center items-center bg-white h-screen dark:invert'>
+        <span class='sr-only'>Loading...</span>
+        <div class='h-8 w-8 bg-black rounded-full animate-bounce [animation-delay:-0.3s]'></div>
+        <div class='h-8 w-8 bg-black rounded-full animate-bounce [animation-delay:-0.15s]'></div>
+        <div class='h-8 w-8 bg-black rounded-full animate-bounce'></div>
+    </div>
+    <div x-show="!isLoading" x-init="initChart()" class="w-80vw my-auto justify-center mx-auto ">
+        <canvas x-ref="chartCanvas" class="w-64 h-20 max-w-full max-h-2-full" width="400" height="180"></canvas>
+    </div>
+    <script>
+    //----> BASE - CALL API
+    async function fetchAPI(endPoint, method, dataPost) {
+        const option = {
+            method: method ? ? "GET",
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(dataPost)
+        };
+        try {
+            const res = await fetch(endPoint, option);
+            if (!res ? .ok) {
+                console.log("fetchAPI")
+            }
+            return res.json();
+        } catch (error) {
+            console.log("errorfetchAPI", error)
+        }
+    }
+
+    function convertTimestamp(timestamp) {
+        const date = new Date(timestamp);
+        const hours = date.getHours();
+        const minutes = date.getMinutes();
+        return `${hours}:${minutes}`;
+    }
+
+    document.addEventListener('alpine:init', () => {
+        Alpine.data('screen', () => ({
+            isLoading: false,
+            async initChart() {
+                let __this = this;
+                __this.isLoading = true;
+                try {
+                    const data = await fetchAPI('/getChart')
+                    const ctx = __this.$refs.chartCanvas.getContext('2d')
+                    const timestamps = data.results.A.frames.flatMap(frame => frame.data.values[0]);
+                    const uniqueTimestamps = [...new Set(timestamps)].sort((a, b) => a - b);
+                    const datasets = data.results.A.frames.map(frame => ({
+                        label: frame.schema.fields[1].labels.pod,
+                        data: frame.data.values[0].map((x, index) => ({ x, y: frame.data.values[1][index] }))
+                    }));
+                    const dataS = {
+                        labels: uniqueTimestamps,
+                        datasets: datasets.map(item => ({
+                            label: item.label,
+                            data: item.data,
+                            borderWidth: 1,
+                            radius: 0,
+                            fill: true,
+                        })),
+                    };
+                    const config = {
+                        type: 'line',
+                        data: dataS,
+                        maintainAspectRatio: true,
+                        responsive: true,
+                        options: {
+                            layout: { padding: 10 },
+                            interaction: { intersect: false },
+                            plugins: {
+                                title: {
+                                    display: true,
+                                    text: 'CPU',
+                                    color: 'white',
+                                    font: { size: 25 },
+                                    padding: { bottom: 40 }
+                                },
+                                legend: {
+                                    display: true,
+                                    position: 'right',
+                                    align: 'start',
+                                    labels: {
+                                        color: 'white',
+                                        font: { size: 14, lineHeight: 2 }
+                                    }
+                                },
+                                tooltip: {
+                                    callbacks: {
+                                        label: function(context) {
+                                            let label = context.dataset.label || '';
+                                            if (label) label += ': ';
+                                            if (context.parsed.y !== null) label += (context.parsed.y * 100).toFixed(2) + "%";
+                                            return label;
+                                        },
+                                        title: function(data) { return ''; }
+                                    }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    grid: { color: 'rgba(71, 88, 96, 0.5)' },
+                                    fontSize: 5,
+                                    ticks: {
+                                        color: 'rgba(113, 188, 104, 1)',
+                                        callback: function(value) { return (value * 100).toFixed(2) + "%"; }
+                                    }
+                                },
+                                x: {
+                                    grid: { color: 'rgba(71, 88, 96, 0.5)' },
+                                    ticks: {
+                                        color: 'white',
+                                        callback: (val) => convertTimestamp(uniqueTimestamps[val])
+                                    },
+                                    display: true,
+                                    scaleLabel: { display: false }
+                                }
+                            },
+                        },
+                    };
+                    new Chart(ctx, config);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                } finally {
+                    __this.isLoading = false;
+                }
+            },
+        }));
+    });
+    </script>
+    <script src="./cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.10/dist/cdn.min.js"></script> -->
+</body>
+
+</html>
